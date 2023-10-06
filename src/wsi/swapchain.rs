@@ -5,7 +5,7 @@ use std::ops::Deref;
 use anyhow::Result;
 use ash::vk;
 
-use crate::{AppSettings, Device, Error, Instance, Surface, Window, SurfaceSettings};
+use crate::{Device, Error, Instance, Surface, SurfaceSettings};
 use crate::image::*;
 
 #[derive(Debug)]

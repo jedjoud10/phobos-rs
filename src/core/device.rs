@@ -196,12 +196,10 @@ impl Device {
             extension_names.push(CString::from(ray_query_name));
         }
 
-        /*
         // Add required extensions
-        if !I::HEADLESS {
+        if settings.surface_settings.is_some() {
             extension_names.push(CString::from(khr::Swapchain::name()));
         }
-        */
 
         if settings.raytracing {
             extension_names.push(CString::from(khr::DeferredHostOperations::name()));

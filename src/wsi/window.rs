@@ -1,6 +1,5 @@
 //! Utilities for generic window handling
 
-use ash::vk;
 use raw_window_handle::{
     HasRawDisplayHandle, HasRawWindowHandle,
 };

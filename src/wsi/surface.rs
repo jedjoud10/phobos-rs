@@ -5,7 +5,7 @@ use std::ops::Deref;
 use anyhow::Result;
 use ash::vk;
 
-use crate::{AppSettings, Error, Instance, PhysicalDevice, Window};
+use crate::{Instance, PhysicalDevice, Window};
 
 /// Contains all information about a [`VkSurfaceKHR`](vk::SurfaceKHR)
 #[derive(Derivative)]

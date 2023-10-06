@@ -5,7 +5,6 @@ use std::ffi::CStr;
 use anyhow::Result;
 use ash::vk;
 
-use crate::wsi::window::Window;
 use crate::{AppSettings, Error, Instance, Surface};
 use crate::core::queue::{QueueInfo, QueueType};
 use crate::util::string::wrap_c_str;

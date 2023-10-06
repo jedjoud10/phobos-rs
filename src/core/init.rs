@@ -1,13 +1,10 @@
 //! Exposes methods to make initialization of the library easier without losing flexibility.
 
-use std::marker::PhantomData;
-
 use anyhow::Result;
-use ash::vk;
 
 use crate::{
     Allocator, AppSettings, DebugMessenger, DefaultAllocator, Device, ExecutionManager,
-    FrameManager, Instance, PhysicalDevice, Surface, Window, SurfaceSettings,
+    FrameManager, Instance, PhysicalDevice, Surface, SurfaceSettings,
 };
 use crate::pool::{ResourcePool, ResourcePoolCreateInfo};
 
@@ -30,7 +27,19 @@ pub fn init_with_allocator<
     make_alloc: F,
 ) -> Result<Phobos<A>> {
     let instance = Instance::new(settings)?;
-    let physical_device = PhysicalDevice::select(&instance, None, settings)?;
+    
+
+    let mut surface = if let Some(SurfaceSettings { window, .. }) = settings.surface_settings.as_ref() {
+        Some(Surface::new(&instance, *window)?)
+    } else {
+        None
+    };
+
+    let physical_device = PhysicalDevice::select(&instance, surface.as_ref(), settings)?;
+    
+    if let Some(surface) = surface.as_mut() {
+        surface.query_details(&physical_device)?;
+    }
 
     let device = Device::new(&instance, &physical_device, settings)?;
     let allocator = make_alloc(&instance, &physical_device, &device)?;
@@ -42,21 +51,16 @@ pub fn init_with_allocator<
     let pool = ResourcePool::new(pool_info)?;
     let exec = ExecutionManager::new(device.clone(), &physical_device, pool.clone())?;
 
-    let (surface, frame) = if let Some(surface_settings) = settings.surface_settings.as_ref() {
-        let mut surface = Surface::new(&instance, surface_settings.window)?;
-        surface.query_details(&physical_device)?;
-
-        let frame = FrameManager::new_with_swapchain(
+    let frame = if let Some(surface_settings) = settings.surface_settings.as_ref() {
+        Some(FrameManager::new_with_swapchain(
             &instance,
             device.clone(),
             pool.clone(),
             surface_settings,
-            &surface,
-        )?;
-
-        (Some(surface), Some(frame))
+            &surface.as_ref().unwrap(),
+        )?)
     } else {
-        (None, None)
+        None
     };
 
     let debug_messenger = if settings.enable_validation {

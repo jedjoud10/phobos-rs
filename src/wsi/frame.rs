@@ -70,7 +70,7 @@ use anyhow::Result;
 use ash::vk;
 
 use crate::{
-    Allocator, AppSettings, CmdBuffer, DefaultAllocator, Device, Error, ExecutionManager, Fence,
+    Allocator, CmdBuffer, DefaultAllocator, Device, Error, ExecutionManager, Fence,
     Image, ImageView, Instance, Semaphore, Surface, Swapchain, SurfaceSettings,
 };
 use crate::pool::{Poolable, Pooled, ResourcePool};

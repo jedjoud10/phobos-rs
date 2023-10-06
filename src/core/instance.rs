@@ -93,11 +93,6 @@ fn create_vk_instance(
         extensions.push(CString::from(ash::extensions::ext::DebugUtils::name()));
     }
 
-    info!("Enabled instance extensions:");
-    for ext in &extensions {
-        info!("{:?}", ext);
-    }
-
     if let Some(SurfaceSettings { window, .. }) = settings.surface_settings {
         extensions.extend(
             ash_window::enumerate_required_extensions(window.raw_display_handle())?
@@ -105,6 +100,11 @@ fn create_vk_instance(
                 .iter()
                 .map(|&raw_str| unsafe { CString::from(CStr::from_ptr(raw_str)) }),
         );
+    }
+
+    info!("Enabled instance extensions:");
+    for ext in &extensions {
+        info!("{:?}", ext);
     }
 
     let layers_raw = unwrap_to_raw_strings(layers.as_slice());
