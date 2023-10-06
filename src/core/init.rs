@@ -12,27 +12,17 @@ use crate::{
 use crate::pool::{ResourcePool, ResourcePoolCreateInfo};
 
 /// Struct that contains all common Phobos resources to be used at initialization
-pub struct Phobos<A: Allocator> {
-    pub instance: Instance,
-    pub physical_device: PhysicalDevice,
-    pub device: Device,
-    pub allocator: A,
-    pub pool: ResourcePool<A>,
-    pub exec: ExecutionManager<A>,
-    pub surface: Option<Surface>,
-    pub frame: Option<FrameManager<A>>,
-    pub debug_messenger: Option<DebugMessenger>,
-}
+pub type Phobos<A> = (Instance, PhysicalDevice, Device, A, ResourcePool<A>, ExecutionManager<A>, Option<Surface>, Option<FrameManager<A>>, Option<DebugMessenger>);
 
 /// Initialize the context with the default allocator
-fn init(settings: &AppSettings) -> Result<Phobos<DefaultAllocator>> {
+pub fn init(settings: &AppSettings) -> Result<Phobos<DefaultAllocator>> {
     init_with_allocator(settings, |instance, physical_device, device| {
         DefaultAllocator::new(instance, device, physical_device)
     })
 }
 
 /// Initialize the context with a custom allocator
-fn init_with_allocator<
+pub fn init_with_allocator<
     A: Allocator + 'static,
     F: FnOnce(&Instance, &PhysicalDevice, &Device) -> Result<A>,
 >(
@@ -75,15 +65,15 @@ fn init_with_allocator<
         None
     };
 
-    Ok(Phobos {
+    Ok((
         instance,
         physical_device,
-        surface,
         device,
         allocator,
         pool,
         exec,
+        surface,
         frame,
         debug_messenger,
-    })
+    ))
 }
