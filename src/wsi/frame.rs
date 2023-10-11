@@ -138,9 +138,9 @@ pub struct FrameManager<A: Allocator = DefaultAllocator> {
 }
 
 #[derive(Debug, Copy, Clone)]
-struct AcquiredImage {
-    pub index: u32,
-    pub resize_required: bool,
+pub struct AcquiredImage {
+    index: u32,
+    resize_required: bool,
 }
 
 impl<A: Allocator> FrameManager<A> {
@@ -332,18 +332,12 @@ impl<A: Allocator> FrameManager<A> {
     }
 
     /// Obtain a new frame context to run commands in.
-    /// This will call the provided callback function to obtain a [`SubmitBatch`](crate::sync::submit_batch::SubmitBatch)
-    /// which contains the commands to be submitted for this frame.
-    pub async fn new_frame<D, F>(
+    pub fn begin(
         &mut self,
-        exec: ExecutionManager<A>,
         window: &dyn Window,
+        exec: ExecutionManager<A>,
         surface: &Surface,
-        f: F,
-    ) -> Result<()>
-    where
-        D: ExecutionDomain + 'static,
-        F: FnOnce(InFlightContext) -> Result<SubmitBatch<D>>, {
+    ) -> Result<InFlightContext> {
         // Advance deletion queue by one frame
         self.swapchain_delete.next_frame();
 
@@ -369,24 +363,32 @@ impl<A: Allocator> FrameManager<A> {
             self.current_image = index;
         }
 
-        let submission = {
-            let per_frame = &mut self.per_frame[self.current_frame as usize];
-            // Delete the command buffer used the previous time this frame was allocated.
-            if let Some(cmd) = &mut per_frame.command_buffer {
-                unsafe { cmd.delete(exec.clone())? }
-            }
-            per_frame.command_buffer = None;
-            let image = self.swapchain.images()[self.current_image as usize]
-                .view
-                .clone();
+        let per_frame = &mut self.per_frame[self.current_frame as usize];
+        // Delete the command buffer used the previous time this frame was allocated.
+        if let Some(cmd) = &mut per_frame.command_buffer {
+            unsafe { cmd.delete(exec.clone())? }
+        }
+        per_frame.command_buffer = None;
+        let image = self.swapchain.images()[self.current_image as usize]
+            .view
+            .clone();
 
-            let ifc = InFlightContext {
-                swapchain_image: image,
-                wait_semaphore: per_frame.image_ready.clone(),
-                signal_semaphore: per_frame.gpu_finished.clone(),
-            };
-            f(ifc)?
-        };
+        Ok(InFlightContext {
+            swapchain_image: image,
+            wait_semaphore: per_frame.image_ready.clone(),
+            signal_semaphore: per_frame.gpu_finished.clone(),
+        })
+    }
+
+    pub fn end<D>(
+        &mut self,
+        ifc: InFlightContext,
+        exec: ExecutionManager<A>,
+        submission: SubmitBatch<D>
+    ) -> Result<()>
+    where 
+        D: ExecutionDomain + 'static
+    {
         self.submit(submission)?;
         self.present(exec)
     }
