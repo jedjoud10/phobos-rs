@@ -47,6 +47,7 @@ pub fn make_context_with_queues(
             features_1_2: Default::default(),
             features_1_3: Default::default(),
             device_extensions: vec![],
+            scoring_callback: Box::new(|_| 0)
         })
         .build();
     let (instance, phys_device, None, device, allocator, pool, exec, None, None) =
@@ -87,6 +88,7 @@ pub fn make_context_with_settings<
             features_1_2: Default::default(),
             features_1_3: Default::default(),
             device_extensions: vec![],
+            scoring_callback: Box::new(|_| 0)
         });
 
     let settings = callback(builder).build();

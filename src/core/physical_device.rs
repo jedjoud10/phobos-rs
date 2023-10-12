@@ -39,6 +39,7 @@ pub struct PhysicalDevice {
 
 impl PhysicalDevice {
     /// Selects the best available physical device from the given requirements and parameters.
+    /// Also makes use of the given user callback for selecting between multiple candidates
     pub fn select(
         instance: &Instance,
         surface: Option<&Surface>,
@@ -49,9 +50,9 @@ impl PhysicalDevice {
             return Err(anyhow::Error::from(Error::NoGPU));
         }
 
-        devices
+        let mut candidates = devices
             .iter()
-            .find_map(|device| -> Option<PhysicalDevice> {
+            .filter_map(|device| -> Option<PhysicalDevice> {
                 let mut physical_device = PhysicalDevice {
                     handle: *device,
                     properties: unsafe { instance.get_physical_device_properties(*device) },
@@ -203,7 +204,12 @@ impl PhysicalDevice {
                 trace!("Created new VkPhysicalDevice {:p}", physical_device.handle);
                 Some(physical_device)
             })
-            .ok_or_else(|| anyhow::Error::from(Error::NoGPU))
+            .map(|physical_device| ((settings.gpu_requirements.scoring_callback)(&physical_device), physical_device))
+            .collect::<Vec<_>>();
+
+        candidates.sort_by_key(|(score, _)| *score);
+        let (_, chosen) = candidates.remove(0);
+        Ok(chosen)
     }
 
     /// Get all queue families available on this device. This is different from

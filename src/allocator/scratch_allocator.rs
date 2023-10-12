@@ -71,6 +71,7 @@ pub struct ScratchAllocator<A: Allocator = DefaultAllocator> {
     allocator: A,
     buffers: Vec<Buffer<A>>,
     current_buffer: usize,
+    largest_block_size: vk::DeviceSize,
     local_offset: vk::DeviceSize,
     chunk_size: vk::DeviceSize,
     alignment: vk::DeviceSize,
@@ -126,6 +127,10 @@ impl<A: Allocator> ScratchAllocator<A> {
             local_offset: 0,
             chunk_size,
             current_buffer: 0,
+
+            // we already pre-allocate a block so this cannot be 0 
+            largest_block_size: chunk_size,
+
             alignment,
             device,
             allocator: allocator.clone(),
@@ -164,6 +169,11 @@ impl<A: Allocator> ScratchAllocator<A> {
             // In case we want to allocate something larger than the chunk size
             let whole_buffer_size = size.max(self.chunk_size);
             let whole_buffer_size = ((whole_buffer_size as f32) / (self.alignment as f32)).ceil() as u64 * self.alignment;
+            
+            // Per #70, allocate a block twice the size the largest current block (if possible)
+            // In case the allocation is bigger than the twice the largest block size, simply use the largest one
+            let whole_buffer_size = (self.largest_block_size * 2).max(whole_buffer_size);
+            self.largest_block_size = self.largest_block_size.max(whole_buffer_size);
             
             // Create a new chunked buffer with the chunk size 
             let buffer = Buffer::new(self.device.clone(), &mut self.allocator, whole_buffer_size, MemoryType::CpuToGpu)?;
@@ -213,29 +223,19 @@ impl<A: Allocator> ScratchAllocator<A> {
     ///     Ok(())
     /// }
     /// ```
-    pub unsafe fn reset(&mut self, compressed_sized: Option<vk::DeviceSize>) -> Result<()> {
+    pub unsafe fn reset(&mut self) -> Result<()> {
         // Compressed size after reset when we have multiple buffers
         if self.buffers.len() > 1 {
-            let compressed_size = compressed_sized.map(|size| {
-                ((size as f32) / (self.alignment as f32)).ceil() as u64 * self.alignment
-            }).unwrap_or_else(|| {
-                // We know that the sizes of the buffers is always aligned, so we shouldn't need to re-align
-                self.buffers.iter().map(|buf| buf.size()).sum()
-            });
-
-            // Create a new buffer that should contain *all* allocations during the frame 
-            let buffer = Buffer::new(self.device.clone(), &mut self.allocator, compressed_size, MemoryType::CpuToGpu)?;
-            if !buffer.is_mapped() {
-                anyhow::bail!(Error::UnmappableBuffer);
-            }
-
+            // Find the largest block (could optimize this by storing index instead)
+            let index = self.buffers.iter().position(|buffer| buffer.size() == self.largest_block_size).unwrap();
+            let buffer = self.buffers.remove(index);
             self.buffers.clear();
             self.buffers.push(buffer);
         }
-
+    
         self.current_buffer = 0;
         self.local_offset = 0;
-
+    
         return Ok(());
     }
 }
@@ -244,6 +244,6 @@ impl<A: Allocator> Poolable for ScratchAllocator<A> {
     type Key = ();
 
     fn on_release(&mut self) {
-        unsafe { self.reset(None).unwrap() }
+        unsafe { self.reset().unwrap() }
     }
 }

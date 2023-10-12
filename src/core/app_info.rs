@@ -61,9 +61,11 @@ pub struct QueueRequest {
 /// // Enable an optional Vulkan feature.
 /// requirements.features.sampler_anisotropy = vk::TRUE;
 /// ```
-#[derive(Default, Debug)]
+#[derive(Derivative)]
+#[derivative(Debug)]
+#[derivative(Default)]
 pub struct GPURequirements {
-/// Whether a dedicated GPU is required. Setting this to true will discard integrated GPUs.
+    /// Whether a dedicated GPU is required. Setting this to true will discard integrated GPUs.
     pub dedicated: bool,
     /// Minimum amount of video memory required, in bytes. Note that this might count shared memory if RAM is shared.
     pub min_video_memory: usize,
@@ -86,6 +88,12 @@ pub struct GPURequirements {
     pub features_1_3: vk::PhysicalDeviceVulkan13Features,
     /// Vulkan device extensions that should be present and enabled.
     pub device_extensions: Vec<String>,
+    /// Callback function that will be used to select between multiple physical devices
+    /// The returned integer is a theoretical score for each physical device
+    /// Physical Devices with higher "scores" will be prioritized
+    #[derivative(Debug = "ignore")]
+    #[derivative(Default(value = "Box::new(|_| 0)"))]
+    pub scoring_callback: Box<dyn Fn(&crate::PhysicalDevice) -> usize>,
 }
 
 /// Extra data that is stored within the AppSettings whenever we want to enable renderable Surfaces 

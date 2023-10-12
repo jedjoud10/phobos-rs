@@ -8,7 +8,7 @@ mod framework;
 
 #[test]
 pub fn alloc_buffer() -> Result<()> {
-    let mut context = framework::make_context().expect("Can initialize context.");
+    let mut context = framework::make_context().expect("Failed to initialize context.");
 
     const ALLOC_SIZE: u64 = 1024u64;
 
@@ -31,7 +31,7 @@ pub fn alloc_buffer() -> Result<()> {
 
 #[test]
 pub fn alloc_aligned_buffer() -> Result<()> {
-    let mut context = framework::make_context().expect("Can initialize context.");
+    let mut context = framework::make_context().expect("Failed to initialize context.");
 
     const ALLOC_SIZE: u64 = 1000u64;
     const ALIGN: u64 = 128;
@@ -57,7 +57,7 @@ pub fn alloc_aligned_buffer() -> Result<()> {
 
 #[test]
 pub fn buffer_view_full() -> Result<()> {
-    let mut context = framework::make_context().expect("Can initialize context.");
+    let mut context = framework::make_context().expect("Failed to initialize context.");
 
     const ALLOC_SIZE: u64 = 1024u64;
 
@@ -83,7 +83,7 @@ pub fn buffer_view_full() -> Result<()> {
 
 #[test]
 pub fn buffer_view() -> Result<()> {
-    let mut context = framework::make_context().expect("Can initialize context.");
+    let mut context = framework::make_context().expect("Failed to initialize context.");
 
     const ALLOC_SIZE: u64 = 1024u64;
 
@@ -115,7 +115,7 @@ pub fn buffer_view() -> Result<()> {
 
 #[test]
 pub fn invalid_buffer_view() -> Result<()> {
-    let mut context = framework::make_context().expect("Can initialize context.");
+    let mut context = framework::make_context().expect("Failed to initialize context.");
 
     const ALLOC_SIZE: u64 = 1024u64;
 
