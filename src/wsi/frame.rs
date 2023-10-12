@@ -138,7 +138,7 @@ pub struct FrameManager<A: Allocator = DefaultAllocator> {
 }
 
 #[derive(Debug, Copy, Clone)]
-pub struct AcquiredImage {
+struct AcquiredImage {
     index: u32,
     resize_required: bool,
 }
@@ -380,9 +380,9 @@ impl<A: Allocator> FrameManager<A> {
         })
     }
 
+    /// Submit the frame context and present the image to the screen
     pub fn end<D>(
         &mut self,
-        ifc: InFlightContext,
         exec: ExecutionManager<A>,
         submission: SubmitBatch<D>
     ) -> Result<()>
